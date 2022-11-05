@@ -11,8 +11,10 @@ def video_to_images(src_vdo, dst_dir, limited_frame):
     count = 1
     success = 1
     video_name = os.path.split(src_vdo)[1].split(".")[0]
-    dst_dir = os.path.join(dst_dir, video_name)
-    os.makedirs(dst_dir, exist_ok=True)
+
+    if limited_frame > 1:
+        dst_dir = os.path.join(dst_dir, video_name)
+        os.makedirs(dst_dir, exist_ok=True)
 
     while success and count <= limited_frame:
         success, frame = vc.read()
@@ -21,7 +23,7 @@ def video_to_images(src_vdo, dst_dir, limited_frame):
         im_pil = im_pil.resize((224, 224), Image.NEAREST)
         im_pil = np.array(im_pil)
 
-        filename = f"{str(count)}.jpg"
+        filename = f"{str(count)}.jpg" if limited_frame > 1 else f"{video_name}.jpg"
         imageio.imwrite(os.path.join(dst_dir, filename), frame)
         count += 1
     vc.release()
@@ -46,7 +48,7 @@ def batch_process_videos(src_dir, dst_dir):
                 filename = os.path.split(file)[1]
                 if filename.endswith(".mp4"):
                     src_vdo_file = os.path.join(src_class_path, filename)
-                    video_to_images(src_vdo_file, dst_class_path, 10)
+                    video_to_images(src_vdo_file, dst_class_path, 1)
 
 
 batch_process_videos('../formatted_dataset', '../formatted_img_dataset')
