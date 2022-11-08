@@ -5,14 +5,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 
 
-DTS_DIR = "../formatted_img_dataset"
-TRAIN_DIR = os.path.join(DTS_DIR, 'train')
-VAL_DIR = os.path.join(DTS_DIR, 'validation')
-TEST_DIR = os.path.join(DTS_DIR, 'test')
-BATCH_SIZE = 64
-
-
-def load_image(train_dir, val_dir, test_dir, batch_size):
+def load_image(train_dir, val_dir, test_dir):
     resize = transforms.Resize(size=(224, 224))
     h_flip = transforms.RandomHorizontalFlip(p=0.25)
     v_flip = transforms.RandomVerticalFlip(p=0.25)
@@ -29,8 +22,8 @@ def load_image(train_dir, val_dir, test_dir, batch_size):
     print("[INFO] test dataset contains {} samples...".format(len(test_dataset)))
 
     print("[INFO] creating training and validation set dataloaders...")
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size)
+    train_loader = DataLoader(train_dataset, batch_size=train_dataset.__len__(), shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=val_dataset.__len__())
+    test_loader = DataLoader(test_dataset, batch_size=test_dataset.__len__())
 
     return train_loader, val_loader, test_loader
