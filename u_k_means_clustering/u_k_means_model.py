@@ -11,6 +11,7 @@ class UKMeans:
         self.n = len(data_points)  # The number of data points
         self.c = len(data_points)  # The number of centroids
         self.c_cum = [len(data_points)]
+        self.remain_cluster = range(self.c)
         self.alpha = [1/self.n] * self.n  # The probability of one data point belonged to the kth class
         self.a = data_points.copy()  # The position of kth centroids
         self.beta = 1  # Learning rate β
@@ -30,6 +31,7 @@ class UKMeans:
             for k in range(self.c):
                 entropy = (dist(xi, self.a[k])**2) - (self.gamma * log(self.alpha[k]))
                 if min_entropy > entropy:
+                    min_entropy = entropy
                     belonging_cluster = [k]
                 elif min_entropy == entropy:
                     belonging_cluster.append(k)
@@ -76,7 +78,7 @@ class UKMeans:
                 beta_restriction_max_denominator = kth_denominator
 
         time_based_beta /= self.c
-        beta_restriction = (1-beta_restriction_max_numerator) / (-beta_restriction_max_denominator)
+        beta_restriction = (1-beta_restriction_max_numerator) / (-beta_restriction_max_denominator) if beta_restriction_max_denominator != 0 else float('inf')
 
         return min(time_based_beta, beta_restriction)
 
@@ -84,14 +86,14 @@ class UKMeans:
         z_transpose = np.array(self.z).T.tolist()
         remain_alpha = []
         remain_z = []
-        remain_cluster = [k for k, alpha_k in new_alpha if alpha_k > 1/self.n]
-        for k in remain_cluster:
+        self.remain_cluster = [k for k, alpha_k in enumerate(new_alpha) if alpha_k > 1/self.n]
+        for k in self.remain_cluster:
             remain_alpha.append(new_alpha[k]),
             remain_z.append(z_transpose[k])
 
         sum_alpha = sum(remain_alpha)
 
-        self.c = len(remain_cluster)
+        self.c = len(self.remain_cluster)
         self.c_cum.append(self.c)
         self.alpha.clear()
         self.z.clear()
@@ -99,7 +101,7 @@ class UKMeans:
         for k in range(self.c):
             self.alpha.append(remain_alpha[k] / sum_alpha)
             zk = []
-            sum_zk = sum(remain_z)
+            sum_zk = sum(remain_z[k])
             for i in range(self.n):
                 zk.append(remain_z[k][i] / sum_zk)
             z_transpose.append(zk)
@@ -112,8 +114,8 @@ class UKMeans:
         z_transpose_np = np.array(self.z).T
         x_np = np.array(self.x)
         new_a = []
-        for k in range(self.c):
-            new_a.append(sum(z_transpose_np*x_np)/sum(z_transpose_np))
+        for k in self.remain_cluster:
+            new_a.append(sum(np.stack((z_transpose_np[k],z_transpose_np[k]), axis=-1))*x_np/sum(z_transpose_np[k]).tolist())
 
         return new_a
 
@@ -130,7 +132,7 @@ class UKMeans:
         self.beta = self.compute_beta(self.alpha, new_alpha)
         self.update_cluster(new_alpha)
         new_a = self.compute_a()
-        loop_justification = self.stop_loop(self.a, new_a)
+        loop_justification = not self.stop_loop(self.a, new_a)
         self.a = new_a
         self.t += 1
 
